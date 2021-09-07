@@ -24,8 +24,31 @@ impl World {
     }
 
     pub fn ray_color(&self, ray: &Ray) -> Color {
-        let t = 0.5 * (ray.direction.unit().y + 1.0);
-        Color::new(1.0, 1.0, 1.0) * (1.0 - t) * 255.999 + Color::new(0.5, 0.7, 1.0) * t * 255.999
+        let disc = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
+        let result = match disc > 0.0 {
+            true => {
+                let nv = (ray.at(disc) - Vec3::new(0.0, 0.0, -1.0)).unit();
+                Color::new(nv.x + 1.0, nv.y + 1.0, nv.z + 1.0) * 0.5
+            },
+            false => {
+                let t = 0.5 * (ray.direction.unit().y + 1.0);
+                Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+            }
+        };
+        result * 255.999
+    }
+}
+
+fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
+    let oc = ray.origin - *center;
+    let a = ray.direction.squared_length();
+    let half_b = oc * ray.direction;
+    let c = oc.squared_length() - radius * radius;
+    let discriminant = half_b * half_b - a * c;
+    if discriminant > 0.0 {
+        (-half_b - discriminant.sqrt()) / a
+    } else {
+        -1.0
     }
 }
 
