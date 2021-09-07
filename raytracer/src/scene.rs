@@ -2,11 +2,12 @@
 // You SHOULD remove above line in your code.
 
 use crate::Vec3;
-use crate::World;
-use raytracer_codegen::make_spheres_impl;
+use crate::{Hittable, HittableList};
+use crate::Sphere;
+// use raytracer_codegen::make_spheres_impl;
 
 // Call the procedural macro, which will become `make_spheres` function.
-make_spheres_impl! {}
+// make_spheres_impl! {}
 
 // These three structs are just written here to make it compile.
 // You should `use` your own structs in this file.
@@ -15,18 +16,27 @@ make_spheres_impl! {}
 pub struct ConstantTexture(Vec3);
 pub struct DiffuseLight(ConstantTexture);
 
-pub struct Sphere {
-    center: Vec3,
-    radius: f64,
-    material: DiffuseLight,
-}
+pub fn example_scene() -> HittableList {
+    // Just for test
+    let mut spheres: Vec<Box<dyn Hittable>> = vec![
+        Box::new(Sphere {
+            center: Vec3::new(0.3, 0.0, -1.0),
+            radius: 0.3,
+        }),
+        Box::new(Sphere {
+            center: Vec3::new(-0.4, -0.5, -1.0),
+            radius: 0.2
+        }),
+    ]; // Now `spheres` stores two spheres.
 
-pub fn example_scene() -> World {
-    let mut spheres: Vec<Box<Sphere>> = make_spheres(); // Now `spheres` stores two spheres.
-    let mut hittable_list = vec![];
+    // let mut hittables = vec![]; // This is wrong
+    let mut hittables: Vec<Box<dyn Hittable>> = vec![];
     // You can now add spheres to your own world
-    hittable_list.append(&mut spheres);
+    hittables.append(&mut spheres);
 
-    hittable_list.clear();
-    World { height: 512 }
+    return HittableList{
+        hittables,
+    };
+    // hittable_list.clear();
+    // World { height: 512 }
 }

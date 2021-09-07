@@ -4,52 +4,36 @@ mod material;
 mod ray;
 mod scene;
 mod vec3;
+mod hit_record;
+mod hittable;
+mod sphere;
 
 use image::{ImageBuffer, Rgb, RgbImage};
 use indicatif::ProgressBar;
-pub use ray::Ray;
 use scene::example_scene;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use threadpool::ThreadPool;
 pub use vec3::{Color, Point3, Vec3};
+pub use ray::Ray;
+pub use hit_record::HitRecord;
+pub use hittable::{Hittable, HittableList};
+pub use sphere::Sphere;
 
-pub struct World {
-    pub height: u32,
-}
 
-impl World {
-    pub fn color(&self, _x: u32, _y: u32) -> Color {
-        unimplemented!();
-    }
-
-    pub fn ray_color(&self, ray: &Ray) -> Color {
-        let disc = hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5, ray);
-        let result = match disc > 0.0 {
-            true => {
-                let nv = (ray.at(disc) - Vec3::new(0.0, 0.0, -1.0)).unit();
-                Color::new(nv.x + 1.0, nv.y + 1.0, nv.z + 1.0) * 0.5
-            },
-            false => {
-                let t = 0.5 * (ray.direction.unit().y + 1.0);
-                Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
-            }
-        };
-        result * 255.999
-    }
-}
-
-fn hit_sphere(center: &Point3, radius: f64, ray: &Ray) -> f64 {
-    let oc = ray.origin - *center;
-    let a = ray.direction.squared_length();
-    let half_b = oc * ray.direction;
-    let c = oc.squared_length() - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-    if discriminant > 0.0 {
-        (-half_b - discriminant.sqrt()) / a
-    } else {
-        -1.0
-    }
+fn ray_color(world: &HittableList, ray: &Ray) -> Color {
+    let rec_option = world.hit(ray, 0.0, f64::INFINITY);
+    let result = match rec_option {
+        Some(rec) => { 
+            let nv = (ray.at(rec.t) - Vec3::new(0.0, 0.0, -1.0)).unit();
+            Color::new(nv.x + 1.0, nv.y + 1.0, nv.z + 1.0) * 0.5
+        }
+        None => {
+            let t = 0.5 * (ray.direction.unit().y + 1.0);
+            Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
+        }
+    };
+    result * 255.999
 }
 
 fn is_ci() -> bool {
@@ -110,13 +94,11 @@ fn main() {
                 for (img_y, y) in (row_begin..row_end).enumerate() {
                     let y = y as u32;
                     let pixel = img.get_pixel_mut(x, img_y as u32);
-                    let origin = Point3::new(0.0, 0.0, 0.0);
                     let u = (x as f64) / (width as f64 - 1.0);
                     let v = (y as f64) / (height as f64 - 1.0);
                     let direction = lower_left_corner + horizontal * u + vertical * v - origin;
                     let ray = Ray::new(origin, direction);
-                    // let color = world_ptr.color(x, y);
-                    let color = world_ptr.ray_color(&ray);
+                    let color = ray_color(&world_ptr, &ray);
                     *pixel = Rgb([color.x as u8, color.y as u8, color.z as u8]);
                 }
             }
