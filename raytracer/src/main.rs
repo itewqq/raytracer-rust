@@ -22,19 +22,26 @@ pub use sphere::Sphere;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use threadpool::ThreadPool;
-use utils::{clamp3, random_in_unit_sphere};
+use utils::{clamp3, random_in_hemisphere};
 pub use vec3::{Color, Point3, Vec3};
+
+fn gamma2_correct(color: Color, samples_per_pixel: u32) -> Color {
+    let scale = 1.0 / (samples_per_pixel as f64);
+    Color {
+        x: (color.x * scale).sqrt(),
+        y: (color.y * scale).sqrt(),
+        z: (color.z * scale).sqrt(),
+    }
+}
 
 fn ray_color(world: &HittableList, ray: &Ray, depth: u32, rng: &mut SmallRng) -> Color {
     if depth == 0 {
         return Color::zero();
     }
-    let rec_option = world.hit(ray, 0.0, f64::INFINITY);
+    let rec_option = world.hit(ray, 1e-5, f64::INFINITY);
     let result = match rec_option {
         Some(rec) => {
-            let target = rec.p
-                + rec.normal
-                + random_in_unit_sphere(rng);
+            let target = rec.p + random_in_hemisphere(rec.normal, rng);
             ray_color(world, &Ray::new(rec.p, target - rec.p), depth - 1, rng) * 0.5
         }
         None => {
@@ -111,7 +118,7 @@ fn main() {
                         let ray = camera_ptr.get_ray(u, v);
                         color += ray_color(&world_ptr, &ray, max_depth, &mut rng);
                     }
-                    color *= 255.999 / (samples_per_pixel as f64);
+                    color = gamma2_correct(color, samples_per_pixel) * 255.999;
                     *pixel = Rgb([color.x as u8, color.y as u8, color.z as u8]);
                 }
             }
