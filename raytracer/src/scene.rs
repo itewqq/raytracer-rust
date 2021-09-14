@@ -20,12 +20,12 @@ pub fn example_scene() -> HittableList {
     // Just for test
     let mut spheres: Vec<Box<dyn Hittable>> = vec![
         Box::new(Sphere {
-            center: Vec3::new(0.3, 0.0, -1.0),
-            radius: 0.3,
+            center: Vec3::new(0.0, 0.0, -1.0),
+            radius: 0.5,
         }),
         Box::new(Sphere {
-            center: Vec3::new(-0.4, -0.5, -1.0),
-            radius: 0.2
+            center: Vec3::new(0.0, -100.5, -1.0),
+            radius: 100.0
         }),
     ]; // Now `spheres` stores two spheres.
 

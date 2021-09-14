@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rand = { version = "0.8.0", features = ["small_rng"] }
 image = "0.23"
 indicatif = "0.15"
 imageproc = "0.21"
