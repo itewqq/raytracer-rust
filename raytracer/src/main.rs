@@ -22,21 +22,27 @@ pub use sphere::Sphere;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use threadpool::ThreadPool;
-use utils::clamp3;
+use utils::{clamp3, random_in_unit_sphere};
 pub use vec3::{Color, Point3, Vec3};
 
-fn ray_color(world: &HittableList, ray: &Ray) -> Color {
+fn ray_color(world: &HittableList, ray: &Ray, depth: u32, rng: &mut SmallRng) -> Color {
+    if depth == 0 {
+        return Color::zero();
+    }
     let rec_option = world.hit(ray, 0.0, f64::INFINITY);
     let result = match rec_option {
         Some(rec) => {
-            (rec.normal + Color::new(1.0, 1.0, 1.0))* 0.5
+            let target = rec.p
+                + rec.normal
+                + random_in_unit_sphere(rng);
+            ray_color(world, &Ray::new(rec.p, target - rec.p), depth - 1, rng) * 0.5
         }
         None => {
             let t = 0.5 * (ray.direction.unit().y + 1.0);
             Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
         }
     };
-    clamp3(result) * 255.999
+    return clamp3(result);
 }
 
 fn is_ci() -> bool {
@@ -67,13 +73,16 @@ fn main() {
     let height = 512;
     let width = 1024;
     let aspect_ratio = (width as f64) / (height as f64);
-    let samples_per_pixel = 100;
 
     // use Arc to pass one instance of World to multiple threads
     let world = Arc::new(example_scene());
 
     // Camera
     let camera = Arc::new(Camera::new());
+
+    // Render
+    let samples_per_pixel = 100;
+    let max_depth = 50;
 
     for i in 0..n_jobs {
         let tx = tx.clone();
@@ -100,9 +109,9 @@ fn main() {
                         let u = target_x / (width as f64 - 1.0);
                         let v = target_y / (height as f64 - 1.0);
                         let ray = camera_ptr.get_ray(u, v);
-                        color += ray_color(&world_ptr, &ray);
+                        color += ray_color(&world_ptr, &ray, max_depth, &mut rng);
                     }
-                    color *= 1.0 / (samples_per_pixel as f64);
+                    color *= 255.999 / (samples_per_pixel as f64);
                     *pixel = Rgb([color.x as u8, color.y as u8, color.z as u8]);
                 }
             }
