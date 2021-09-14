@@ -29,8 +29,7 @@ fn ray_color(world: &HittableList, ray: &Ray) -> Color {
     let rec_option = world.hit(ray, 0.0, f64::INFINITY);
     let result = match rec_option {
         Some(rec) => {
-            let nv = (ray.at(rec.t) - Vec3::new(0.0, 0.0, -1.0)).unit();
-            Color::new(nv.x + 1.0, nv.y + 1.0, nv.z + 1.0) * 0.5
+            (rec.normal + Color::new(1.0, 1.0, 1.0))* 0.5
         }
         None => {
             let t = 0.5 * (ray.direction.unit().y + 1.0);
