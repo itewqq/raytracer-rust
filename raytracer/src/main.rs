@@ -3,8 +3,11 @@
 mod camera;
 mod hit_record;
 mod hittable;
+mod lambertian;
 mod material;
+mod metal;
 mod ray;
+mod scatter_record;
 mod scene;
 mod sphere;
 mod utils;
@@ -15,8 +18,10 @@ pub use hit_record::HitRecord;
 pub use hittable::{Hittable, HittableList};
 use image::{ImageBuffer, Rgb, RgbImage};
 use indicatif::ProgressBar;
+use material::Material;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
 pub use ray::Ray;
+use scatter_record::ScatterRecord;
 use scene::example_scene;
 pub use sphere::Sphere;
 use std::sync::mpsc::channel;
@@ -41,14 +46,36 @@ fn ray_color(world: &HittableList, ray: &Ray, depth: u32, rng: &mut SmallRng) ->
     let rec_option = world.hit(ray, 1e-5, f64::INFINITY);
     let result = match rec_option {
         Some(rec) => {
-            let target = rec.p + random_in_hemisphere(rec.normal, rng);
-            ray_color(world, &Ray::new(rec.p, target - rec.p), depth - 1, rng) * 0.5
+            let material = rec.material.clone();
+            match material.scatter(ray, rec, rng) {
+                Some(ScatterRecord::Specular {
+                    specular_ray,
+                    attenuation,
+                }) => {
+                    // println!("???");
+                    Vec3::elemul(ray_color(world, &specular_ray, depth - 1, rng), attenuation)
+                }
+                Some(ScatterRecord::Diffuse {
+                    scattered,
+                    attenuation,
+                }) => {
+                    // println!("????");
+                    Vec3::elemul(ray_color(world, &scattered, depth - 1, rng), attenuation)
+                }
+                None => {
+                    // println!("wtf");
+                    Color::new(0.0, 0.0, 0.0)
+                }
+            }
+            // let target = rec.p + random_in_hemisphere(rec.normal, rng);
+            // ray_color(world, &Ray::new(rec.p, target - rec.p), depth - 1, rng) * 0.5
         }
         None => {
             let t = 0.5 * (ray.direction.unit().y + 1.0);
             Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
         }
     };
+    // println!("{:?}", result);
     return clamp3(result);
 }
 

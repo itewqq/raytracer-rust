@@ -52,6 +52,10 @@ impl Vec3 {
             z: lhs.z * rhs.z,
         }
     }
+
+    pub fn reflect(v: Self, n: Self) -> Self {
+        v - n * (v * n) * 2.0
+    }
 }
 
 impl Add for Vec3 {

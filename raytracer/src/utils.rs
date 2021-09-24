@@ -27,7 +27,7 @@ pub fn random_in_hemisphere(normal: Vec3, rng: &mut SmallRng) -> Point3 {
     let in_unit_sphere = random_in_unit_sphere(rng);
     if in_unit_sphere * normal > 0.0 {
         return in_unit_sphere;
-    }else {
+    } else {
         return -in_unit_sphere;
     }
 }

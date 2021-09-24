@@ -1,9 +1,11 @@
 #![allow(dead_code)]
 // You SHOULD remove above line in your code.
 
-use crate::Vec3;
+use crate::{Vec3, Color};
 use crate::{Hittable, HittableList};
 use crate::Sphere;
+use crate::{lambertian::Lambertian, metal::Metal};
+use std::sync::Arc;
 // use raytracer_codegen::make_spheres_impl;
 
 // Call the procedural macro, which will become `make_spheres` function.
@@ -17,17 +19,33 @@ pub struct ConstantTexture(Vec3);
 pub struct DiffuseLight(ConstantTexture);
 
 pub fn example_scene() -> HittableList {
+    let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
+    let material_center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
+    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3));
+    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
     // Just for test
     let mut spheres: Vec<Box<dyn Hittable>> = vec![
         Box::new(Sphere {
             center: Vec3::new(0.0, 0.0, -1.0),
             radius: 0.5,
+            material: material_center.clone(),
         }),
         Box::new(Sphere {
             center: Vec3::new(0.0, -100.5, -1.0),
-            radius: 100.0
+            radius: 100.0,
+            material: material_ground.clone(),
         }),
-    ]; // Now `spheres` stores two spheres.
+        Box::new(Sphere {
+            center: Vec3::new(-1.0, 0.0, -1.0),
+            radius: 0.5,
+            material: material_left.clone(),
+        }),
+        Box::new(Sphere {
+            center: Vec3::new(1.0, 0.0, -1.0),
+            radius: 0.5,
+            material: material_right.clone(),
+        }),
+    ];
 
     // let mut hittables = vec![]; // This is wrong
     let mut hittables: Vec<Box<dyn Hittable>> = vec![];
