@@ -4,7 +4,7 @@
 use crate::{Vec3, Color};
 use crate::{Hittable, HittableList};
 use crate::Sphere;
-use crate::{lambertian::Lambertian, metal::Metal};
+use crate::{lambertian::Lambertian, metal::Metal, dielectric::Dielectric};
 use std::sync::Arc;
 // use raytracer_codegen::make_spheres_impl;
 
@@ -20,8 +20,8 @@ pub struct DiffuseLight(ConstantTexture);
 
 pub fn example_scene() -> HittableList {
     let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let material_center = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.3)));
-    let material_left = Arc::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3));
+    let material_center = Arc::new(Dielectric::new(1.5));
+    let material_left = Arc::new(Dielectric::new(1.5));
     let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0));
     // Just for test
     let mut spheres: Vec<Box<dyn Hittable>> = vec![

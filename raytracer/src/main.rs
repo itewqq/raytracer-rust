@@ -4,8 +4,9 @@ mod camera;
 mod hit_record;
 mod hittable;
 mod lambertian;
-mod material;
+mod dielectric;
 mod metal;
+mod material;
 mod ray;
 mod scatter_record;
 mod scene;
@@ -52,18 +53,15 @@ fn ray_color(world: &HittableList, ray: &Ray, depth: u32, rng: &mut SmallRng) ->
                     specular_ray,
                     attenuation,
                 }) => {
-                    // println!("???");
                     Vec3::elemul(ray_color(world, &specular_ray, depth - 1, rng), attenuation)
                 }
                 Some(ScatterRecord::Diffuse {
                     scattered,
                     attenuation,
                 }) => {
-                    // println!("????");
                     Vec3::elemul(ray_color(world, &scattered, depth - 1, rng), attenuation)
                 }
                 None => {
-                    // println!("wtf");
                     Color::new(0.0, 0.0, 0.0)
                 }
             }
@@ -75,7 +73,6 @@ fn ray_color(world: &HittableList, ray: &Ray, depth: u32, rng: &mut SmallRng) ->
             Color::new(1.0, 1.0, 1.0) * (1.0 - t) + Color::new(0.5, 0.7, 1.0) * t
         }
     };
-    // println!("{:?}", result);
     return clamp3(result);
 }
 

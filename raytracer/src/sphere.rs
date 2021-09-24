@@ -19,22 +19,32 @@ impl Hittable for Sphere {
             let t = (-half_b - discriminant.sqrt()) / a; // smaller t
             if t_min < t && t < t_max {
                 let p = ray.at(t);
-                let normal = (p - self.center) / self.radius;
+                let mut normal = (p - self.center) / self.radius;
+                let front = (normal * ray.direction) < 0.0;
+                if front == false {
+                    normal = -normal;
+                }
                 return Some(HitRecord {
                     p,
                     normal,
                     t,
+                    front,
                     material: self.material.clone(),
                 });
             }
             let t = (-half_b + discriminant.sqrt()) / a; // larger t
             if t_min < t && t < t_max {
                 let p = ray.at(t);
-                let normal = (p - self.center) / self.radius;
+                let mut normal = (p - self.center) / self.radius;
+                let front = (normal * ray.direction) < 0.0;
+                if front == false {
+                    normal = -normal;
+                }
                 return Some(HitRecord {
                     p,
                     normal,
                     t,
+                    front,
                     material: self.material.clone(),
                 });
             }
