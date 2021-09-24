@@ -23,8 +23,15 @@ impl Material for Dielectric {
             false => self.ir,
         };
         let unit_direction = ray_in.direction.unit();
-        let refracted = Vec3::refract(unit_direction, hit_record.normal, refraction_ratio);
-        let specular_ray = Ray::new(hit_record.p, refracted);
+        let cos_theta = (-unit_direction*hit_record.normal).min(1.0);
+        let sin_theta = (1.0-cos_theta*cos_theta).sqrt();
+
+        let cannot_refract = (refraction_ratio * sin_theta) > 1.0;
+        let direction = match cannot_refract {
+            true => Vec3::reflect(unit_direction, hit_record.normal),
+            false => Vec3::refract(unit_direction, hit_record.normal, refraction_ratio),
+        };
+        let specular_ray = Ray::new(hit_record.p, direction);
         let attenuation = Color::new(1.0, 1.0, 1.0);
         return Some(ScatterRecord::Specular {
             specular_ray,
