@@ -109,7 +109,7 @@ fn main() {
     let world = Arc::new(example_scene());
 
     // Camera
-    let camera = Arc::new(Camera::new(90.0, aspect_ratio));
+    let camera = Arc::new(Camera::new(Point3::new(-2.0, 2.0, 1.0), Point3::new(0.0, 0.0, -1.0), Vec3::new(0.0, 1.0, 0.0), 20.0, aspect_ratio));
 
     // Render
     let samples_per_pixel = 100;
