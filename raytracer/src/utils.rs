@@ -45,6 +45,15 @@ pub fn random_in_unit_sphere(rng: &mut SmallRng) -> Point3 {
     }
 }
 
+pub fn random_in_unitdisk(rng: &mut SmallRng) -> Vec3 {
+    loop {
+        let p = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+        if p.squared_length() <1_f64 {
+            return p;
+        }
+    }
+}
+
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - n * (v * n) * 2.0
 }

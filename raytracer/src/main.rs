@@ -101,19 +101,26 @@ fn main() {
     let bar = ProgressBar::new(n_jobs as u64);
 
     // Image
-    let height = 512;
-    let width = 1024;
+    let height = 800;
+    let width = 1200;
     let aspect_ratio = (width as f64) / (height as f64);
 
     // use Arc to pass one instance of World to multiple threads
     let world = Arc::new(example_scene());
 
     // Camera
-    let camera = Arc::new(Camera::new(Point3::new(-2.0, 2.0, 1.0), Point3::new(0.0, 0.0, -1.0), Vec3::new(0.0, 1.0, 0.0), 20.0, aspect_ratio));
+    let lookfrom = Vec3::new(13.0, 2.0, 3.0);
+    let lookat = Vec3::new(0.0, 0.0, 0.0);
+    let vup = Vec3::new(0.0, 1.0, 0.0);
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
+    let camera = Arc::new(Camera::new(lookfrom, lookat, vup, 20.0, aspect_ratio, aperture, dist_to_focus));
 
     // Render
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 500;
     let max_depth = 50;
+
+    println!("Start");
 
     for i in 0..n_jobs {
         let tx = tx.clone();
@@ -139,7 +146,7 @@ fn main() {
                         let target_y: f64 = y as f64 + rng.gen_range(0.0..1.0);
                         let u = target_x / (width as f64 - 1.0);
                         let v = target_y / (height as f64 - 1.0);
-                        let ray = camera_ptr.get_ray(u, v);
+                        let ray = camera_ptr.get_ray(u, v, &mut rng);
                         color += ray_color(&world_ptr, &ray, max_depth, &mut rng);
                     }
                     color = gamma2_correct(color, samples_per_pixel) * 255.999;
@@ -153,6 +160,8 @@ fn main() {
     }
 
     let mut result: RgbImage = ImageBuffer::new(width, height);
+
+    println!("Wait for result..");
 
     for (rows, data) in rx.iter().take(n_jobs) {
         // idx is the corrsponding row in partial-rendered image

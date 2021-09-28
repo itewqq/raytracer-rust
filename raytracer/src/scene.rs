@@ -1,11 +1,12 @@
 #![allow(dead_code)]
 // You SHOULD remove above line in your code.
 
-use crate::{Vec3, Color};
+use crate::{Vec3, Point3, Color};
 use crate::{Hittable, HittableList};
-use crate::Sphere;
-use crate::{lambertian::Lambertian, metal::Metal, dielectric::Dielectric};
+use crate::{Sphere, utils};
+use crate::{Material, lambertian::Lambertian, metal::Metal, dielectric::Dielectric};
 use std::sync::Arc;
+use rand::{rngs::SmallRng, Rng, SeedableRng};
 // use raytracer_codegen::make_spheres_impl;
 
 // Call the procedural macro, which will become `make_spheres` function.
@@ -19,38 +20,70 @@ pub struct ConstantTexture(Vec3);
 pub struct DiffuseLight(ConstantTexture);
 
 pub fn example_scene() -> HittableList {
-    let material_ground = Arc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    let material_center = Arc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    let material_left = Arc::new(Dielectric::new(1.5));
-    let material_right = Arc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0));
-    // Just for test
+    let mut rng = SmallRng::from_entropy();
+
+    // Add ground
+    let material_ground = Arc::new(Lambertian::new(Color::new(0.5, 0.5, 0.5)));
     let mut spheres: Vec<Box<dyn Hittable>> = vec![
         Box::new(Sphere {
-            center: Vec3::new(0.0, 0.0, -1.0),
-            radius: 0.5,
-            material: material_center.clone(),
-        }),
-        Box::new(Sphere {
-            center: Vec3::new(0.0, -100.5, -1.0),
-            radius: 100.0,
+            center: Vec3::new(0.0, -1000.0, 0.0),
+            radius: 1000.0,
             material: material_ground.clone(),
         }),
-        Box::new(Sphere {
-            center: Vec3::new(-1.0, 0.0, -1.0),
-            radius: 0.5,
-            material: material_left.clone(),
-        }),
-        Box::new(Sphere {
-            center: Vec3::new(-1.0, 0.0, -1.0),
-            radius: -0.45,
-            material: material_left.clone(),
-        }),
-        Box::new(Sphere {
-            center: Vec3::new(1.0, 0.0, -1.0),
-            radius: 0.5,
-            material: material_right.clone(),
-        }),
     ];
+
+    // Add random small spheres
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = rng.gen_range(0.0..1.0);
+            let center = Point3::new(a as f64 + 0.9 * rng.gen_range(0.0..1.0), 0.2, b as f64 + 0.9 * rng.gen_range(0.0..1.0));
+
+            if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+                let sphere_material: Arc<dyn Material> = match choose_mat {
+                    x if x < 0.8 => {
+                        let albedo = utils::random_in_unit_sphere(&mut rng);
+                        let albedo = Vec3::elemul(albedo, albedo); // No negative color
+                        Arc::new(Lambertian::new(albedo))
+                    }
+                    x if x < 0.95 => {
+                        let albedo = Color::new(rng.gen_range(0.5..1.0), rng.gen_range(0.5..1.0), rng.gen_range(0.5..1.0));
+                        let fuzz = rng.gen_range(0.0..0.5);
+                        Arc::new(Metal::new(albedo, fuzz))
+                    }
+                    _ => {
+                        Arc::new(Dielectric::new(1.5))
+                    }
+                };
+                spheres.push(Box::new(Sphere {
+                    center,
+                    radius: 0.2,
+                    material: sphere_material.clone(),
+                }));
+            }
+        }
+    }
+
+    // Add big balls
+    let big_material1 = Arc::new(Dielectric::new(1.5));
+    let big_material2 = Arc::new(Lambertian::new(Color::new(0.4, 0.2, 0.1)));
+    let big_material3 = Arc::new(Metal::new(Color::new(0.7, 0.6, 0.5), 0.0));
+    spheres.append(&mut vec![
+        Box::new(Sphere {
+            center: Vec3::new(0.0, 1.0, 0.0),
+            radius: 1.0,
+            material: big_material1.clone(),
+        }),
+        Box::new(Sphere {
+            center: Vec3::new(-4.0, 1.0, 0.0),
+            radius: 1.0,
+            material: big_material2.clone(),
+        }),
+        Box::new(Sphere {
+            center: Vec3::new(4.0, 1.0, 0.0),
+            radius: 1.0,
+            material: big_material3.clone(),
+        }),
+    ]);
 
     // let mut hittables = vec![]; // This is wrong
     let mut hittables: Vec<Box<dyn Hittable>> = vec![];
